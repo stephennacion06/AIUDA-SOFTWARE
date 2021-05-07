@@ -1,3 +1,5 @@
+#include <PID_v1.h>
+
 //---------------------------------------PID THROTTLE------------------------
 //HALL EFFECT SENSOR
 volatile unsigned long lastturn, time_press;
@@ -20,6 +22,7 @@ String str;
 //THROTTLE PID
 double Setpoint_t, Input_t, Output_t;
 double Kp_t = 2, Ki_t = 5, Kd_t = 1;
+double pid_p = 0, pid_i = 0, pid_d = 0;
 PID myPID_t(&Input_t, &Output_t, &Setpoint_t, Kp_t, Ki_t, Kd_t, DIRECT);
 #define throttle_pin 9
 //THROTTLE PID
@@ -59,20 +62,40 @@ void loop() {
   char delimiters[] = "[!:,]";
   char* valPosition;
   char* valPosition2;
+  char* valPosition3;
+  char* valPosition4;
   valPosition = strtok(char_array, delimiters);
-  Setpoint_s  = atoi(valPosition);
+  Setpoint_t  = atoi(valPosition);
   valPosition2 = strtok(NULL, delimiters);
-  Setpoint_t = atoi(valPosition2);
+  pid_p = atoi(valPosition2);
+  valPosition3 = strtok(NULL, delimiters);
+  pid_i = atoi(valPosition3);
+  valPosition4 = strtok(NULL, delimiters);
+  pid_d = atoi(valPosition4);
 
   Input_t = SPEED;
   linear_actuator_activate(Setpoint_t);
+  
+  // Update PID Parameters
+  myPID_t.SetTunings(pid_p, pid_i, pid_d);
+  
+  // Compute PID Parameters 
   myPID_t.Compute();
-  Serial.print("Desired Speed: ");
-  Serial.print(Setpoint_s);
+   
+   // Display Output
+  Serial.print("Kp: ");
+  Serial.print(pid_p);
+  Serial.print(" Ki: ");
+  Serial.print(pid_i);
+  Serial.print(" Kd: ");
+  Serial.print(pid_d);
+  Serial.print(" Desired Speed: ");
+  Serial.print(Setpoint_t);
   Serial.print("  Feedback Speed: ");
   Serial.print(Input_t);
   Serial.print(" Output PWM: ");
   Serial.println(Output_t);
+  
   analogWrite(throttle_pin, Output_t);
 
   if ((millis() - lastturn) > 2000) {       // if there is no signal more than 2 seconds

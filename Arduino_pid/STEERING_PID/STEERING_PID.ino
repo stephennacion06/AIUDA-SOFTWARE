@@ -31,6 +31,7 @@ double current_angle;
 //PID STEERING
 double Setpoint_s, Input_s, Output_s;
 double Kp_s = 2, Ki_s = 5, Kd_s = 1;
+double pid_p = 0, pid_i = 0, pid_d = 0;
 PID myPID_s(&Input_s, &Output_s, &Setpoint_s, Kp_s, Ki_s, Kd_s, DIRECT);
 //PID STEERING
 
@@ -67,27 +68,50 @@ void loop() {
     str = Serial.readStringUntil('\n');
 
   }
+  
   int str_len = str.length() + 1;
   char char_array[str_len];
   str.toCharArray(char_array, str_len);
   char delimiters[] = "[!:,]";
   char* valPosition;
   char* valPosition2;
+  char* valPosition3;
+  char* valPosition4;
   valPosition = strtok(char_array, delimiters);
   Setpoint_s  = atoi(valPosition);
   valPosition2 = strtok(NULL, delimiters);
-  Setpoint_t = atoi(valPosition2);
-
+  pid_p = atoi(valPosition2);
+  valPosition3 = strtok(NULL, delimiters);
+  pid_i = atoi(valPosition3);
+  valPosition4 = strtok(NULL, delimiters);
+  pid_d = atoi(valPosition4);
+  
+  
   current_angle = mpu_loop();
   Input_s = current_angle;
+  
+  // Update PID Parameters
+  myPID_s.SetTunings(pid_p, pid_i, pid_d);
+  
+  // Compute PID Parameters 
   myPID_s.Compute();
+
+  // PWM the output of PID
   pwmOut(Output_s);
-  Serial.print("Desired Angle: ");
+
+  // Display Output
+  Serial.print("Kp: ");
+  Serial.print(pid_p);
+  Serial.print(" Ki: ");
+  Serial.print(pid_i);
+  Serial.print(" Kd: ");
+  Serial.print(pid_d);
+  Serial.print(" Desired Angle: ");
   Serial.print(Setpoint_s);
   Serial.print(" Feedback Angle: ");
   Serial.print(Input_s);
   Serial.print(" Output PWM: ");
-  Serial.print(Output_s);
+  Serial.println(Output_s);
   
 }
 
